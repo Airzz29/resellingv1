@@ -1,0 +1,79 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--subtle" aria-hidden="true"></div>
+
+<header class="rh-dash-header">
+  <div class="rh-dash-header-inner">
+    <a href="/admin" class="rh-dash-brand"><span class="rh-admin-badge">Admin</span> cj.resells</a>
+    <div class="rh-dash-actions">
+      <a href="/admin" class="rh-link-nav rh-link-nav--header">← Back to admin</a>
+      <form method="post" action="/admin/logout" class="rh-logout-form">
+        <button type="submit" class="rh-btn rh-btn-ghost-sm">Log out</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main class="rh-admin-main">
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Transactions</h2>
+    <p class="rh-admin-hint">Wallet total reflects sums recorded when admins create/edit accounts since the latest wallet reset.</p>
+
+    <div class="rh-copy-row" style="padding-top: 10px;">
+      <div>
+        <span class="rh-copy-label">Wallet total</span>
+        <p class="rh-copy-value">$<%= (Number(totalCents || 0) / 100).toFixed(2) %></p>
+      </div>
+      <form method="post" action="/admin/wallet/reset" onsubmit="return confirm('Reset wallet? This will zero the wallet and add a reset entry to the history (does not delete users).');">
+        <button type="submit" class="rh-btn rh-btn-ghost-sm">Reset wallet</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Recent entries</h2>
+    <p class="rh-admin-hint">Latest 200 entries.</p>
+
+    <% if (!transactions || !transactions.length) { %>
+      <p class="rh-muted-inline">No transactions yet.</p>
+    <% } else { %>
+      <div class="rh-admin-customer-list">
+        <% transactions.forEach(function (t) { %>
+          <div class="rh-customer-row" style="align-items: flex-start;">
+            <div class="rh-customer-row-meta">
+              <h3 class="rh-user-name" style="margin: 0 0 4px;">
+                $<%= (Number(t.amountCents || 0) / 100).toFixed(2) %>
+                · <span style="opacity: 0.9;">User:</span> <%= t.createdUsername %>
+              </h3>
+              <p class="rh-user-sub" style="margin: 0;">
+                Admin: <strong><%= t.adminUsername %></strong> · <%= t.createdAt %>
+              </p>
+              <p class="rh-muted-inline" style="margin: 8px 0 0;">
+                <% if (t.kind === 'reset') { %>
+                  Wallet reset
+                  · Triggered by <strong><%= t.adminUsername %></strong>
+                  <% if (t.meta && typeof t.meta.previousTotalCents !== 'undefined') { %>
+                    · Previous total: $<%= (Number(t.meta.previousTotalCents || 0) / 100).toFixed(2) %>
+                  <% } %>
+                <% } else if (t.productData && typeof t.productData === 'object' && !Array.isArray(t.productData) && t.productData.type === 'edit') { %>
+                  Access edit · Edited user: <strong><%= t.createdUsername %></strong>
+                  <% if (t.productData.added && t.productData.added.length) { %>
+                    · Added: <%= t.productData.added.join(', ') %>
+                  <% } %>
+                  <% if (t.productData.removed && t.productData.removed.length) { %>
+                    · Removed: <%= t.productData.removed.join(', ') %>
+                  <% } %>
+                <% } else { %>
+                  <% const ids = Array.isArray(t.productData) ? t.productData : []; %>
+                  Account created · New user: <strong><%= t.createdUsername %></strong> · Items: <%= ids.length ? ids.join(', ') : 'None' %>
+                <% } %>
+              </p>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/foot') %>
+
