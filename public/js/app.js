@@ -89,6 +89,149 @@
     });
   }
 
+  /* Fullscreen image modal (quality photos lightbox) */
+  var imgOverlay = qs("#rh-img-modal");
+  if (imgOverlay) {
+    var imgEl = qs("#rh-img-modal-img");
+    var imgButtons = qsa(".js-img-modal-open");
+    var imgList = imgButtons.map(function (btn) {
+      return {
+        idx: parseInt(btn.getAttribute("data-img-index") || "0", 10) || 0,
+        url: btn.getAttribute("data-img-url") || "",
+        alt: btn.getAttribute("data-img-alt") || "Quality photo",
+      };
+    });
+
+    // Ensure imgList is sorted by the provided index.
+    imgList.sort(function (a, b) {
+      return a.idx - b.idx;
+    });
+
+    function setImageByIndex(nextIndex) {
+      if (!imgList.length) return;
+      var clamped = Math.max(0, Math.min(nextIndex, imgList.length - 1));
+      var item = imgList[clamped];
+      if (!item || !item.url) return;
+      if (imgEl) {
+        imgEl.src = item.url;
+        imgEl.alt = item.alt;
+      }
+      imgOverlay.dataset.activeIndex = String(clamped);
+    }
+
+    function nextImage() {
+      if (imgOverlay.hidden) return;
+      var current = parseInt(imgOverlay.dataset.activeIndex || "0", 10) || 0;
+      setImageByIndex(current + 1);
+    }
+
+    function prevImage() {
+      if (imgOverlay.hidden) return;
+      var current = parseInt(imgOverlay.dataset.activeIndex || "0", 10) || 0;
+      setImageByIndex(current - 1);
+    }
+
+    qsa(".js-img-modal-open").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var url = btn.getAttribute("data-img-url") || "";
+        var alt = btn.getAttribute("data-img-alt") || "Quality photo";
+        var idx = parseInt(btn.getAttribute("data-img-index") || "0", 10) || 0;
+        if (!url) return;
+        if (imgEl) {
+          imgEl.src = url;
+          imgEl.alt = alt;
+        }
+        // Use the click index to select the correct item.
+        // Since we sort by data-img-index, we find its position in imgList.
+        var pos = 0;
+        for (var i = 0; i < imgList.length; i++) {
+          if (imgList[i] && imgList[i].idx === idx) {
+            pos = i;
+            break;
+          }
+        }
+        imgOverlay.dataset.activeIndex = String(pos);
+        imgOverlay.hidden = false;
+        document.body.style.overflow = "hidden";
+      });
+    });
+
+    qsa(".js-img-modal-close").forEach(function (b) {
+      b.addEventListener("click", function () {
+        imgOverlay.hidden = true;
+        document.body.style.overflow = "";
+      });
+    });
+
+    imgOverlay.addEventListener("click", function (e) {
+      if (e.target === imgOverlay) {
+        imgOverlay.hidden = true;
+        document.body.style.overflow = "";
+      }
+    });
+
+    // Keyboard navigation (desktop)
+    document.addEventListener("keydown", function (e) {
+      if (!imgOverlay || imgOverlay.hidden) return;
+      if (e.key === "Escape") {
+        imgOverlay.hidden = true;
+        document.body.style.overflow = "";
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nextImage();
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prevImage();
+        return;
+      }
+    });
+
+    // Horizontal wheel / trackpad navigation
+    imgOverlay.addEventListener(
+      "wheel",
+      function (e) {
+        if (imgOverlay.hidden) return;
+        var dx = e.deltaX || 0;
+        var dy = e.deltaY || 0;
+        // Prefer horizontal intent.
+        if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) {
+          e.preventDefault();
+          if (dx > 0) nextImage();
+          else prevImage();
+        }
+      },
+      { passive: false }
+    );
+
+    // Touch swipe navigation (mobile)
+    var touchStartX = null;
+    var touchStartY = null;
+    imgOverlay.addEventListener("touchstart", function (e) {
+      if (imgOverlay.hidden) return;
+      if (!e.touches || !e.touches.length) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+    imgOverlay.addEventListener("touchend", function (e) {
+      if (imgOverlay.hidden) return;
+      if (touchStartX === null || !e.changedTouches || !e.changedTouches.length) return;
+      var dx = e.changedTouches[0].clientX - touchStartX;
+      var dy = e.changedTouches[0].clientY - touchStartY;
+      // Horizontal swipe
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        e.preventDefault();
+        if (dx > 0) prevImage();
+        else nextImage();
+      }
+      touchStartX = null;
+      touchStartY = null;
+    });
+  }
+
   /* Product modal + email API */
   var overlay = qs("#product-modal");
   if (!overlay) return;
