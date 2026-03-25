@@ -32,14 +32,25 @@
 
       <div class="rh-quality-cta">
         <% if (customer && hasAccess) { %>
-          <a class="rh-btn rh-btn-primary rh-btn-block" href="/dashboard">Get from dashboard</a>
+          <a class="rh-btn rh-btn-primary rh-btn-block" href="/dashboard">Request delivery from dashboard</a>
         <% } else if (customer && !hasAccess) { %>
           <a class="rh-btn rh-btn-unlock-pill rh-btn-block" href="/payment?for=<%= encodeURIComponent(quality.product.id) %>&return=dashboard">Unlock — $<%= quality.product.price %></a>
         <% } else { %>
           <a class="rh-btn rh-btn-primary rh-btn-block" href="/login?wanted=<%= encodeURIComponent(quality.product.id) %>">Sign in to request delivery</a>
         <% } %>
       </div>
+      <p class="rh-muted-inline rh-quality-public-note" style="margin-top: 12px;">
+        Quality photos are public. Use the button above to request delivery.
+      </p>
     </section>
+
+    <% /* Public photo lightbox (fullscreen) */ %>
+    <div class="rh-img-modal-overlay" id="rh-img-modal" hidden>
+      <div class="rh-img-modal" role="dialog" aria-modal="true" aria-label="Image preview">
+        <button type="button" class="rh-img-modal-close js-img-modal-close" aria-label="Close">×</button>
+        <img id="rh-img-modal-img" class="rh-img-modal-img" alt="" loading="eager" />
+      </div>
+    </div>
 
     <% if (quality.bundles && quality.bundles.length) { %>
       <% quality.bundles.forEach(function (b) { %>
@@ -56,12 +67,21 @@
           <% } %>
 
           <div class="rh-quality-grid">
-            <% b.images.forEach(function (img) { %>
+            <% b.images.forEach(function (img, idx) { %>
               <div class="rh-quality-img-wrap">
                 <% if (img.isCover) { %>
                   <span class="rh-quality-cover-badge">Cover</span>
                 <% } %>
-                <img class="rh-quality-img" src="<%= img.url %>" alt="Quality photo" loading="lazy" />
+                  <button
+                  type="button"
+                  class="rh-quality-img-btn js-img-modal-open"
+                  data-img-url="<%= img.url %>"
+                  data-img-index="<%= idx %>"
+                  data-img-alt="Quality photo"
+                  aria-label="Open image in full screen"
+                >
+                  <img class="rh-quality-img" src="<%= img.url %>" alt="Quality photo" loading="lazy" />
+                </button>
               </div>
             <% }); %>
           </div>
