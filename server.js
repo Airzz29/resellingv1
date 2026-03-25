@@ -687,9 +687,33 @@ async function renderAdminPanel(res, opts) {
     const u = await store.getUser(editUsername);
     if (u) editUser = u;
   }
+
+  let walletTotalCents = 0;
+  try {
+    const database = getDb();
+    const cutoff = database
+      .prepare(
+        `SELECT COALESCE(MAX(id), 0) AS last_reset_id
+         FROM admin_wallet_transactions
+         WHERE kind = 'reset'`
+      )
+      .get();
+    const lastResetId = cutoff && cutoff.last_reset_id ? Number(cutoff.last_reset_id) : 0;
+    const row = database
+      .prepare(
+        `SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
+         FROM admin_wallet_transactions
+         WHERE id > ? AND (kind IS NULL OR kind != 'reset')`
+      )
+      .get(lastResetId);
+    walletTotalCents = row && row.total_cents ? Number(row.total_cents) : 0;
+  } catch (err) {}
+
   res.render('admin', {
     title: 'Admin — cj.resells',
     adminLoggedIn: true,
+    adminUser: res.req && res.req.session ? res.req.session.adminUser : '',
+    walletTotalCents,
     users,
     products: listProducts(),
     q,
@@ -736,6 +760,7 @@ app.post('/admin/login', (req, res) => {
         });
       }
       req.session.admin = true;
+      req.session.adminUser = username;
       delete req.session.userId;
       delete req.session.visibleIds;
       return res.redirect('/admin');
@@ -763,18 +788,188 @@ app.post('/admin/users/create', requireAdmin, async (req, res) => {
   } catch (e) {
     return renderAdminPanel(res, { error: e.message || 'Could not create user.' });
   }
+
+  // Record wallet transaction based on selected product prices.
+  try {
+    const database = getDb();
+    const idArr = Array.isArray(ids) ? ids : [ids];
+    const uniqueIds = [...new Set(idArr.filter(Boolean).map(String))];
+    let amountCents = 0;
+    if (uniqueIds.length) {
+      const placeholders = uniqueIds.map(() => '?').join(',');
+      const rows = database
+        .prepare(`SELECT price FROM products WHERE id IN (${placeholders})`)
+        .all(...uniqueIds);
+      const totalDollars = rows.reduce((sum, r) => sum + Number(r.price || 0), 0);
+      amountCents = Math.round(totalDollars * 100);
+    }
+    const adminUser = (req.session && req.session.adminUser) ? String(req.session.adminUser) : 'Unknown';
+    database
+      .prepare(
+        `INSERT INTO admin_wallet_transactions (admin_username, created_username, product_ids, amount_cents, kind, meta_json)
+         VALUES (?, ?, ?, ?, 'create', NULL)`
+      )
+      .run(adminUser, username, JSON.stringify(uniqueIds), amountCents);
+  } catch (err) {
+    console.error('wallet transaction error:', err && err.message ? err.message : err);
+  }
+
   res.redirect('/admin');
+});
+
+app.post('/admin/wallet/reset', requireAdmin, (req, res) => {
+  try {
+    const database = getDb();
+    const cutoff = database
+      .prepare(
+        `SELECT COALESCE(MAX(id), 0) AS last_reset_id
+         FROM admin_wallet_transactions
+         WHERE kind = 'reset'`
+      )
+      .get();
+    const lastResetId = cutoff && cutoff.last_reset_id ? Number(cutoff.last_reset_id) : 0;
+    const totalRow = database
+      .prepare(
+        `SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
+         FROM admin_wallet_transactions
+         WHERE id > ? AND (kind IS NULL OR kind != 'reset')`
+      )
+      .get(lastResetId);
+    const totalCents = totalRow && totalRow.total_cents ? Number(totalRow.total_cents) : 0;
+
+    const adminUser =
+      req.session && req.session.adminUser ? String(req.session.adminUser) : 'Unknown';
+    const meta = JSON.stringify({ previousTotalCents: totalCents });
+    database
+      .prepare(
+        `INSERT INTO admin_wallet_transactions (admin_username, created_username, product_ids, amount_cents, kind, meta_json)
+         VALUES (?, ?, '[]', 0, 'reset', ?)`
+      )
+      .run(adminUser, '-', meta);
+  } catch (err) {
+    console.error('wallet reset error:', err && err.message ? err.message : err);
+  }
+  return res.redirect('/admin');
+});
+
+app.get('/admin/transactions', requireAdmin, (req, res) => {
+  const database = getDb();
+  const rows = database
+    .prepare(
+      `SELECT id, admin_username, created_username, product_ids, amount_cents, created_at, kind, meta_json
+       FROM admin_wallet_transactions
+       ORDER BY datetime(created_at) DESC
+       LIMIT 200`
+    )
+    .all();
+
+  const cutoff = database
+    .prepare(
+      `SELECT COALESCE(MAX(id), 0) AS last_reset_id
+       FROM admin_wallet_transactions
+       WHERE kind = 'reset'`
+    )
+    .get();
+  const lastResetId = cutoff && cutoff.last_reset_id ? Number(cutoff.last_reset_id) : 0;
+  const totalRow = database
+    .prepare(
+      `SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
+       FROM admin_wallet_transactions
+       WHERE id > ? AND (kind IS NULL OR kind != 'reset')`
+    )
+    .get(lastResetId);
+  const totalCents = totalRow && totalRow.total_cents ? Number(totalRow.total_cents) : 0;
+
+  return res.render('admin_transactions', {
+    title: 'Admin — Transactions — cj.resells',
+    adminLoggedIn: true,
+    adminUser: req.session.adminUser || '',
+    totalCents,
+    transactions: rows.map((r) => ({
+      id: r.id,
+      adminUsername: r.admin_username,
+      createdUsername: r.created_username,
+      kind: r.kind || 'create',
+      productData: (() => {
+        try {
+          const v = JSON.parse(r.product_ids || '[]');
+          return v;
+        } catch {
+          return [];
+        }
+      })(),
+      meta: (() => {
+        try {
+          const v = JSON.parse(r.meta_json || 'null');
+          return v;
+        } catch {
+          return null;
+        }
+      })(),
+      amountCents: Number(r.amount_cents || 0),
+      createdAt: r.created_at,
+    })),
+  });
 });
 
 app.post('/admin/users/update', requireAdmin, async (req, res) => {
   const username = (req.body.username || '').trim();
   let ids = req.body.visibleIds;
   if (ids === undefined) ids = [];
+  let beforeIds = [];
+  try {
+    const u = await store.getUser(username);
+    beforeIds = u && Array.isArray(u.visibleIds) ? u.visibleIds : [];
+  } catch {}
   try {
     await store.updateUserVisibility(username, ids);
   } catch (e) {
     return renderAdminPanel(res, { error: e.message || 'Could not update user.' });
   }
+
+  // Record wallet transaction for edits (delta based on added/removed items).
+  try {
+    const afterArr = Array.isArray(ids) ? ids : [ids];
+    const afterIds = [...new Set(afterArr.filter(Boolean).map(String))];
+    const beforeSet = new Set((beforeIds || []).map(String));
+    const afterSet = new Set(afterIds);
+    const added = afterIds.filter((id) => !beforeSet.has(id));
+    const removed = (beforeIds || []).map(String).filter((id) => !afterSet.has(id));
+
+    if (added.length || removed.length) {
+      const database = getDb();
+      const allIds = [...new Set([...added, ...removed])];
+      let cents = 0;
+      if (allIds.length) {
+        const placeholders = allIds.map(() => '?').join(',');
+        const rows = database
+          .prepare(`SELECT id, price FROM products WHERE id IN (${placeholders})`)
+          .all(...allIds);
+        const priceMap = {};
+        rows.forEach((r) => {
+          priceMap[String(r.id)] = Math.round(Number(r.price || 0) * 100);
+        });
+        added.forEach((id) => {
+          cents += priceMap[id] || 0;
+        });
+        removed.forEach((id) => {
+          cents -= priceMap[id] || 0;
+        });
+      }
+      const adminUser =
+        req.session && req.session.adminUser ? String(req.session.adminUser) : 'Unknown';
+      const payload = { type: 'edit', added, removed };
+      database
+        .prepare(
+          `INSERT INTO admin_wallet_transactions (admin_username, created_username, product_ids, amount_cents, kind, meta_json)
+           VALUES (?, ?, ?, ?, 'edit', NULL)`
+        )
+        .run(adminUser, username, JSON.stringify(payload), cents);
+    }
+  } catch (err) {
+    console.error('wallet edit transaction error:', err && err.message ? err.message : err);
+  }
+
   res.redirect('/admin');
 });
 
