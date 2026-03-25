@@ -1,0 +1,189 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--subtle" aria-hidden="true"></div>
+
+<header class="rh-dash-header rh-animate-header">
+  <div class="rh-dash-header-inner">
+    <a href="/admin" class="rh-dash-brand">
+      <span class="rh-admin-badge">Admin</span>
+      cj.resells
+    </a>
+    <div class="rh-dash-actions">
+      <a href="/admin" class="rh-link-nav rh-link-nav--header">Back to admin</a>
+      <form method="post" action="/admin/logout" class="rh-logout-form">
+        <button type="submit" class="rh-btn rh-btn-ghost-sm">Log out</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main class="rh-admin-main rh-animate-hero">
+  <% if (error) { %>
+    <div class="rh-alert rh-alert--error rh-admin-banner" role="alert"><%= error %></div>
+  <% } %>
+  <% if (success) { %>
+    <div class="rh-alert rh-alert--ok rh-admin-banner" role="status"><%= success %></div>
+  <% } %>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Add / edit storefront products</h2>
+    <p class="rh-admin-hint">
+      Upload a storefront thumbnail (cover) and set the name, price, category, and description.
+      Add a delivery URL and/or upload a guide file (PDF/ZIP) to be emailed to customers.
+    </p>
+
+    <form class="rh-admin-form" method="post" action="/admin/storefront-products/create" enctype="multipart/form-data">
+      <div class="rh-admin-row">
+        <div>
+          <label class="rh-label" for="new-id">Product ID</label>
+          <input class="rh-input" id="new-id" name="id" required placeholder="e.g. nike-air-max-supplier" />
+          <p class="rh-muted-inline">IDs are used in URLs and in customer access settings.</p>
+        </div>
+        <div>
+          <label class="rh-label" for="new-name">Name</label>
+          <input class="rh-input" id="new-name" name="name" required placeholder="e.g. Nike Air Max Supplier" />
+        </div>
+      </div>
+
+      <div class="rh-admin-row">
+        <div>
+          <label class="rh-label" for="new-price">Price</label>
+          <input class="rh-input" id="new-price" name="price" type="number" min="0" step="1" required value="20" />
+        </div>
+        <div>
+          <label class="rh-label" for="new-category">Category</label>
+          <input class="rh-input" id="new-category" name="category" required placeholder="e.g. Footwear" />
+        </div>
+      </div>
+
+      <div class="rh-admin-row">
+        <div>
+          <label class="rh-label" for="new-size">Card size</label>
+          <select class="rh-input" id="new-size" name="size">
+            <option value="normal">Normal</option>
+            <option value="big">Big (featured)</option>
+          </select>
+        </div>
+        <div>
+          <label class="rh-label" for="new-cover">Storefront thumbnail</label>
+          <input class="rh-input" id="new-cover" name="cover" type="file" accept="image/*" />
+        </div>
+      </div>
+
+      <label class="rh-label" for="new-desc">Description</label>
+      <textarea class="rh-input" id="new-desc" name="description" rows="3" required placeholder="Short premium description for the card."></textarea>
+
+      <label class="rh-label" for="new-delivery-links">Delivery links (one per line)</label>
+      <textarea
+        class="rh-input"
+        id="new-delivery-links"
+        name="deliveryLinks"
+        rows="4"
+        placeholder="https://supplier-link-1.com&#10;https://supplier-link-2.com"
+      ></textarea>
+      <p class="rh-muted-inline">Use this for all-in-one products with multiple supplier links.</p>
+
+      <label class="rh-label" for="new-delivery-file">Guide file (optional PDF/ZIP attachment)</label>
+      <input class="rh-input rh-file-input" id="new-delivery-file" name="deliveryFile" type="file" accept=".pdf,.zip,application/pdf,application/zip" />
+
+      <button type="submit" class="rh-btn rh-btn-primary">Create product</button>
+    </form>
+  </section>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Existing products</h2>
+    <div class="rh-admin-products-grid">
+      <% products.forEach(function (p) { %>
+        <div class="rh-product-admin-card">
+          <div class="rh-product-admin-top">
+            <div class="rh-product-admin-media">
+              <% if (p.coverUrl) { %>
+                <img src="<%= p.coverUrl %>" alt="<%= p.name %> thumbnail" class="rh-product-admin-img" loading="lazy" />
+              <% } else { %>
+                <div class="rh-product-admin-img rh-product-admin-img--placeholder" aria-hidden="true"></div>
+              <% } %>
+              <span class="rh-media-tile-cta" style="opacity: 0.9;"><%= p.size === 'big' ? 'Featured' : 'Standard' %></span>
+            </div>
+            <div class="rh-product-admin-meta">
+              <h3 class="rh-user-name" style="margin: 0 0 6px;"><%= p.name %></h3>
+              <p class="rh-muted-inline" style="margin: 0 0 6px;">ID: <%= p.id %></p>
+              <p class="rh-muted-inline" style="margin: 0 0 10px;">Category: <%= p.category %> · $<%= p.price %></p>
+              <p class="rh-muted-inline" style="margin: 0 0 10px;">Guide file: <%= p.deliveryFileName ? p.deliveryFileName : 'None' %></p>
+              <% const existingLinks = (p.deliveryLinks || p.deliveryUrl || '').split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); %>
+              <div class="rh-admin-current-block">
+                <p class="rh-muted-inline" style="margin: 0 0 8px;">Current links:</p>
+                <% if (existingLinks.length) { %>
+                  <div class="rh-admin-link-list">
+                    <% existingLinks.forEach(function (link) { %>
+                      <span class="rh-admin-link-chip"><%= link %></span>
+                    <% }); %>
+                  </div>
+                <% } else { %>
+                  <p class="rh-muted-inline" style="margin: 0;">No links set</p>
+                <% } %>
+              </div>
+              <div class="rh-user-actions" style="margin: 0;">
+                <a class="rh-btn rh-btn-ghost-sm" href="/admin/products/<%= p.id %>/quality">Quality checks</a>
+              </div>
+            </div>
+          </div>
+
+          <form class="rh-admin-form" method="post" action="/admin/storefront-products/<%= p.id %>/update" enctype="multipart/form-data">
+            <div class="rh-admin-row">
+              <div>
+                <label class="rh-label">Name</label>
+                <input class="rh-input" name="name" value="<%= p.name %>" required />
+              </div>
+              <div>
+                <label class="rh-label">Price</label>
+                <input class="rh-input" name="price" type="number" min="0" step="1" value="<%= p.price %>" required />
+              </div>
+            </div>
+
+            <div class="rh-admin-row">
+              <div>
+                <label class="rh-label">Category</label>
+                <input class="rh-input" name="category" value="<%= p.category %>" required />
+              </div>
+              <div>
+                <label class="rh-label">Size</label>
+                <select class="rh-input" name="size">
+                  <option value="normal" <%= p.size === 'normal' ? 'selected' : '' %>>Normal</option>
+                  <option value="big" <%= p.size === 'big' ? 'selected' : '' %>>Big</option>
+                </select>
+              </div>
+            </div>
+
+            <label class="rh-label">Description</label>
+            <textarea class="rh-input" name="description" rows="2" required><%= p.desc %></textarea>
+
+            <label class="rh-label" style="margin-top: 12px;">Delivery links (one per line)</label>
+            <textarea
+              class="rh-input"
+              name="deliveryLinks"
+              rows="4"
+              placeholder="https://supplier-link-1.com&#10;https://supplier-link-2.com"
+            ><%= p.deliveryLinks || p.deliveryUrl || '' %></textarea>
+
+            <label class="rh-label" style="margin-top: 12px;">Guide file (optional PDF/ZIP)</label>
+            <input class="rh-input rh-file-input" type="file" name="deliveryFile" accept=".pdf,.zip,application/pdf,application/zip" />
+            <p class="rh-muted-inline">Current: <%= p.deliveryFileName ? p.deliveryFileName : 'No guide file uploaded' %></p>
+
+            <label class="rh-label" style="margin-top: 12px;">Update thumbnail (optional)</label>
+            <input class="rh-input rh-file-input" type="file" name="cover" accept="image/*" />
+
+            <div class="rh-user-actions">
+              <button type="submit" class="rh-btn rh-btn-primary">Save changes</button>
+            </div>
+          </form>
+
+          <form method="post" action="/admin/storefront-products/<%= p.id %>/delete" class="rh-delete-form" onsubmit="return confirm('Delete product <%= p.name %>?');">
+            <button type="submit" class="rh-btn-text-danger">Delete product</button>
+          </form>
+        </div>
+      <% }); %>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/foot') %>
+

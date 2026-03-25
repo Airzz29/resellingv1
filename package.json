@@ -1,0 +1,22 @@
+{
+  "name": "cj-resells",
+  "version": "1.0.0",
+  "description": "cj.resells — premium dark dashboard with Express, EJS, and Nodemailer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.11"
+  }
+}

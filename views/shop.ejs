@@ -1,0 +1,82 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--shop" aria-hidden="true"></div>
+<div class="rh-stars rh-stars--dim" aria-hidden="true"></div>
+
+<header class="rh-shop-header rh-animate-header">
+  <div class="rh-shop-header-inner">
+    <a href="/" class="rh-dash-brand">
+      <span class="rh-logo rh-logo--sm" aria-hidden="true">
+        <span class="rh-logo-bar"></span>
+        <span class="rh-logo-bar rh-logo-bar--mid"></span>
+        <span class="rh-logo-bar rh-logo-bar--short"></span>
+      </span>
+      <span>cj.resells</span>
+    </a>
+    <nav class="rh-shop-nav" aria-label="Account">
+      <% if (customer) { %>
+        <a href="/dashboard" class="rh-link-nav">Dashboard</a>
+        <form method="post" action="/logout" class="rh-inline-form">
+          <button type="submit" class="rh-btn rh-btn-ghost-sm">Log out</button>
+        </form>
+      <% } else { %>
+        <a href="/login" class="rh-link-nav">Sign in</a>
+        <a href="/payment" class="rh-btn rh-btn-ghost-sm rh-btn-nav-compact">Pay for access</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+
+<main class="rh-shop-main">
+  <div class="rh-shop-hero rh-animate-hero">
+    <h1 class="rh-shop-title">Supplier storefront</h1>
+    <p class="rh-shop-lead">Premium resources and vendor lines — request delivery to your inbox.</p>
+
+    <% const cats = Array.from(new Set(products.map(function (p) { return p.category; }))); %>
+    <div class="rh-shop-filters" id="rh-category-filter" role="tablist" aria-label="Categories">
+      <button type="button" class="rh-filter-btn is-active js-shop-filter" data-category="all">All</button>
+      <% cats.forEach(function (c) { %>
+        <button type="button" class="rh-filter-btn js-shop-filter" data-category="<%= c %>"><%= c %></button>
+      <% }); %>
+    </div>
+  </div>
+
+  <section class="rh-grid rh-grid-shop rh-shop-grid" aria-label="Products">
+    <% products.forEach(function (p, i) { %>
+      <article
+        class="rh-card rh-card-shop rh-animate-card rh-shop-item <%= p.size === 'big' ? 'rh-shop-item--featured' : '' %>"
+        style="--stagger: <%= i %>"
+        data-category="<%= p.category %>"
+      >
+        <div class="rh-card-glow" aria-hidden="true"></div>
+
+        <div class="rh-card-media">
+          <% if (p.coverUrl) { %>
+            <img class="rh-item-cover" src="<%= p.coverUrl %>" alt="<%= p.name %> cover image" loading="lazy" />
+          <% } else { %>
+            <div class="rh-item-cover rh-item-cover--placeholder" aria-hidden="true"></div>
+          <% } %>
+          <span class="rh-card-category"><%= p.category %></span>
+        </div>
+
+        <h2 class="rh-card-title"><%= p.name %></h2>
+        <p class="rh-card-desc"><%= p.desc %></p>
+        <% const isOwned = Array.isArray(ownedIds) && ownedIds.includes(p.id); %>
+
+        <div class="rh-shop-actions">
+          <% if (isOwned) { %>
+            <a class="rh-btn rh-btn-get-pill rh-btn-owned" href="/dashboard">Owned — open dashboard</a>
+          <% } else { %>
+            <a class="rh-btn rh-btn-get-pill" href="/login?wanted=<%= encodeURIComponent(p.id) %>">
+              Get — $<%= p.price %>
+            </a>
+          <% } %>
+          <a class="rh-btn rh-btn-ghost-sm rh-btn-shop-quality" href="/product/<%= p.id %>/quality?back=shop">
+            Quality checks
+          </a>
+        </div>
+      </article>
+    <% }); %>
+  </section>
+</main>
+
+<%- include('partials/foot') %>

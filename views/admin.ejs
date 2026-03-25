@@ -1,0 +1,217 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--subtle" aria-hidden="true"></div>
+
+<% if (!adminLoggedIn) { %>
+<main class="rh-auth-wrap">
+  <div class="rh-auth-card rh-auth-card--wide">
+    <p class="rh-brand">cj.resells</p>
+    <h1 class="rh-h1">Admin</h1>
+    <p class="rh-sub">Sign in to manage customer accounts and product access.</p>
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="rh-alert rh-alert--error" role="alert"><%= error %></div>
+    <% } %>
+    <form class="rh-form" method="post" action="/admin/login" autocomplete="on">
+      <label class="rh-label" for="admin-user">Username</label>
+      <input class="rh-input" type="text" id="admin-user" name="username" required autocomplete="username" />
+      <label class="rh-label" for="admin-pass">Password</label>
+      <input class="rh-input" type="password" id="admin-pass" name="password" required autocomplete="current-password" />
+      <button type="submit" class="rh-btn rh-btn-primary">Sign in</button>
+    </form>
+    <p class="rh-legal"><a href="/">Back to shop</a></p>
+  </div>
+</main>
+<% } else { %>
+<header class="rh-dash-header">
+  <div class="rh-dash-header-inner">
+    <span class="rh-dash-brand"><span class="rh-admin-badge">Admin</span> cj.resells</span>
+    <form method="post" action="/admin/logout" class="rh-logout-form">
+      <button type="submit" class="rh-btn rh-btn-ghost-sm">Log out</button>
+    </form>
+  </div>
+</header>
+
+<main class="rh-admin-main">
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="rh-alert rh-alert--error rh-admin-banner" role="alert"><%= error %></div>
+  <% } %>
+  <% if (typeof success !== 'undefined' && success) { %>
+    <div class="rh-alert rh-alert--ok rh-admin-banner" role="status"><%= success %></div>
+  <% } %>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Create customer login</h2>
+    <p class="rh-admin-hint">Choose a username and password, then tick which storefront items this user can see on their dashboard.</p>
+    <form class="rh-admin-form" method="post" action="/admin/users/create">
+      <div class="rh-admin-row">
+        <div>
+          <label class="rh-label" for="new-username">Username</label>
+          <input class="rh-input" id="new-username" name="username" required autocomplete="off" />
+        </div>
+        <div>
+          <label class="rh-label" for="new-password">Password</label>
+          <input class="rh-input" id="new-password" name="password" type="password" required autocomplete="new-password" />
+        </div>
+      </div>
+      <fieldset class="rh-fieldset">
+        <legend class="rh-label">Visible products</legend>
+        <div class="rh-check-grid">
+          <% products.forEach(function (p) { %>
+            <label class="rh-check">
+              <input type="checkbox" name="visibleIds" value="<%= p.id %>" />
+              <span><%= p.name %></span>
+            </label>
+          <% }); %>
+        </div>
+      </fieldset>
+      <button type="submit" class="rh-btn rh-btn-primary">Create user</button>
+    </form>
+  </section>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Customers</h2>
+    <div class="rh-admin-split">
+      <div class="rh-admin-split-left">
+        <form method="get" action="/admin" class="rh-search-form">
+          <input
+            class="rh-input rh-input--search"
+            type="text"
+            name="q"
+            value="<%= typeof q !== 'undefined' ? q : '' %>"
+            placeholder="Search by username"
+          />
+          <button type="submit" class="rh-btn rh-btn-ghost-sm rh-btn-search">Search</button>
+        </form>
+
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+          <div class="rh-pagination">
+            <% if (page > 1) { %>
+              <a
+                class="rh-page-link"
+                href="/admin?<%= 'q=' + encodeURIComponent(q || '') + '&page=' + (page - 1) + (editUsername ? '&edit=' + encodeURIComponent(editUsername) : '') %>"
+              >← Prev</a>
+            <% } %>
+            <span class="rh-page-current">Page <strong><%= page %></strong> of <%= totalPages %></span>
+            <% if (page < totalPages) { %>
+              <a
+                class="rh-page-link"
+                href="/admin?<%= 'q=' + encodeURIComponent(q || '') + '&page=' + (page + 1) + (editUsername ? '&edit=' + encodeURIComponent(editUsername) : '') %>"
+              >Next →</a>
+            <% } %>
+          </div>
+        <% } %>
+
+        <div class="rh-admin-customer-list">
+          <% if (!users.length) { %>
+            <p class="rh-muted-inline">No users yet. Create one above.</p>
+          <% } else { %>
+            <% users.forEach(function (u) { %>
+              <div class="rh-customer-row">
+                <div class="rh-customer-row-meta">
+                  <h3 class="rh-user-name" style="margin: 0 0 4px;"><%= u.username %></h3>
+                  <p class="rh-user-sub" style="margin: 0;"><%= (u.visibleIds || []).length %> items assigned</p>
+                </div>
+                <div class="rh-customer-row-actions">
+                  <a
+                    href="/admin?<%= 'q=' + encodeURIComponent(q || '') + '&page=' + page + '&edit=' + encodeURIComponent(u.username) %>"
+                    class="rh-btn rh-btn-ghost-sm"
+                  >Edit</a>
+                </div>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="rh-admin-split-right">
+        <% if (editUsername) { %>
+          <div class="rh-admin-edit-panel">
+            <h3 class="rh-admin-h2" style="margin-top: 0;">Edit access: <%= editUsername %></h3>
+
+            <form method="post" action="/admin/users/update" class="rh-admin-form rh-admin-edit-form">
+              <input type="hidden" name="username" value="<%= editUsername %>" />
+              <fieldset class="rh-fieldset">
+                <legend class="rh-label">Dashboard items</legend>
+
+                <% const categories = Array.from(new Set(products.map(function (p) { return p.category; }))); %>
+                <% categories.forEach(function (cat) { %>
+                  <div class="rh-admin-category-block">
+                    <h4 class="rh-admin-group-title"><%= cat %></h4>
+                    <div class="rh-check-grid">
+                      <% products.filter(function (p) { return p.category === cat; }).forEach(function (p) { %>
+                        <label class="rh-check">
+                          <input
+                            type="checkbox"
+                            name="visibleIds"
+                            value="<%= p.id %>"
+                            <%= editVisibleIds && editVisibleIds.indexOf(p.id) !== -1 ? 'checked' : '' %>
+                          />
+                          <span><%= p.name %></span>
+                        </label>
+                      <% }); %>
+                    </div>
+                  </div>
+                <% }); %>
+              </fieldset>
+
+              <div class="rh-user-actions">
+                <button type="submit" class="rh-btn rh-btn-ghost-sm">Save access</button>
+              </div>
+            </form>
+
+            <form
+              method="post"
+              action="/admin/users/reset-deliveries"
+              class="rh-delete-form"
+              onsubmit="return confirm('Reset delivery email usage for this item for <%= editUsername %>?');"
+            >
+              <input type="hidden" name="username" value="<%= editUsername %>" />
+              <label class="rh-label" for="reset-product-id">Reset this item</label>
+              <select class="rh-input" id="reset-product-id" name="productId" required>
+                <option value="" selected disabled>Select an item</option>
+                <% products.forEach(function (p) { %>
+                  <option value="<%= p.id %>"><%= p.name %></option>
+                <% }); %>
+              </select>
+              <div style="margin-top: 10px;">
+                <button type="submit" class="rh-btn-text-danger">Reset email for selected item</button>
+              </div>
+            </form>
+
+            <form method="post" action="/admin/users/delete" class="rh-delete-form" onsubmit="return confirm('Delete this user?');">
+              <input type="hidden" name="username" value="<%= editUsername %>" />
+              <button type="submit" class="rh-btn-text-danger">Delete user</button>
+            </form>
+          </div>
+        <% } else { %>
+          <div class="rh-admin-edit-empty">
+            <p class="rh-muted-inline">Select a customer from the left to edit which items they can see on the dashboard.</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Storefront products</h2>
+    <p class="rh-admin-hint">
+      Add, edit, and delete the items shown on the public shop — including their thumbnail, description, category, and price.
+    </p>
+    <a class="rh-btn rh-btn-primary rh-btn-block" href="/admin/storefront-products">Manage storefront products</a>
+  </section>
+
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Quality photos &amp; reviews</h2>
+    <p class="rh-admin-hint">Upload cover images + quality check photos for each item. Customers can view them from the shop and your dashboard before they request delivery.</p>
+    <div class="rh-product-media-grid">
+      <% products.forEach(function (p) { %>
+        <a class="rh-media-tile" href="/admin/products/<%= p.id %>/quality">
+          <span class="rh-media-tile-name"><%= p.name %></span>
+          <span class="rh-media-tile-cta">Manage</span>
+        </a>
+      <% }); %>
+    </div>
+  </section>
+</main>
+<% } %>
+
+<%- include('partials/foot') %>

@@ -1,0 +1,112 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg" aria-hidden="true"></div>
+
+<header class="rh-top-nav rh-animate-header">
+  <a href="<%= typeof backHref !== 'undefined' ? backHref : '/' %>" class="rh-link-back">← <%= typeof backLabel !== 'undefined' ? backLabel : 'Back to shop' %></a>
+  <% if (typeof returnDashboard !== 'undefined' && returnDashboard) { %>
+    <a href="/" class="rh-btn-ghost rh-btn-nav">Shop</a>
+  <% } else { %>
+    <a href="/login" class="rh-btn-ghost rh-btn-nav">Sign in</a>
+  <% } %>
+</header>
+
+<main class="rh-payment-wrap">
+  <div class="rh-payment-card rh-animate-hero">
+    <div class="rh-logo rh-logo--center" aria-hidden="true">
+      <span class="rh-logo-bar"></span>
+      <span class="rh-logo-bar rh-logo-bar--mid"></span>
+      <span class="rh-logo-bar rh-logo-bar--short"></span>
+    </div>
+    <h1 class="rh-h1 rh-h1--sm">Pay to get access</h1>
+    <p class="rh-sub">Send payment using PayID below. Access is granted manually after we verify your payment.</p>
+
+    <% if (typeof highlightProducts !== 'undefined' && highlightProducts && highlightProducts.length) { %>
+      <div class="rh-payment-highlight rh-animate-card" style="--stagger: 0">
+        <p class="rh-payment-highlight-label">You’re unlocking</p>
+        <p class="rh-payment-highlight-name">
+          <%= highlightProducts.map(function (p) { return p.name; }).join(' + ') %>
+        </p>
+        <p class="rh-payment-highlight-meta">
+          <% if (highlightProduct) { %>$<%= highlightProduct.price %><% } %>
+          <% if (!highlightProduct && highlightProducts.length) { %>
+            multiple items · one-time unlock
+          <% } %>
+        </p>
+      </div>
+    <% } %>
+
+    <div class="rh-payment-notice rh-animate-card" style="--stagger: 1">
+      <p class="rh-payment-notice-title">When you’ll see it on your dashboard</p>
+      <p class="rh-payment-notice-text">We review payments in order. Your new supplier or vendor line is usually <strong>added within 24 hours</strong> after we confirm your transfer. If we’re backed up, we’ll still prioritise same-day where we can.</p>
+      <p class="rh-payment-notice-text rh-payment-notice-promo">From time to time we <strong>waive or comp unlocks</strong> for loyal members — send your <strong>cjay.resells username</strong> with your Instagram proof and we’ll apply any eligible offer when we approve you.</p>
+    </div>
+
+    <section class="rh-instructions rh-animate-card" style="--stagger: 2">
+      <h2 class="rh-section-title">Payment description (required)</h2>
+      <p class="rh-sub" style="margin-top: -6px;">
+        Use this exact reference in your payment description so our team can match it quickly.
+      </p>
+      <div class="rh-copy-row" style="padding-top: 10px;">
+        <div>
+          <span class="rh-copy-label">Description</span>
+          <p class="rh-copy-value" id="val-transfer-desc"><%= typeof transferDescription !== 'undefined' ? transferDescription : 'bought: cj.resells access' %></p>
+        </div>
+        <button type="button" class="rh-btn rh-btn-ghost-sm js-copy" data-copy-target="val-transfer-desc" data-copy-label="Transfer description">Copy</button>
+      </div>
+    </section>
+
+    <section class="rh-bank-block">
+      <h2 class="rh-section-title">PayID</h2>
+      <div class="rh-copy-row">
+        <div>
+          <span class="rh-copy-label">PayID email</span>
+          <p class="rh-copy-value" id="val-payid">cjayresells@gmail.com</p>
+        </div>
+        <button type="button" class="rh-btn rh-btn-ghost-sm js-copy" data-copy-target="val-payid" data-copy-label="PayID email">Copy</button>
+      </div>
+    </section>
+
+    <section class="rh-instructions">
+      <h2 class="rh-section-title">After you pay</h2>
+      <ol class="rh-steps">
+        <li>Complete the PayID transfer to <strong>cjayresells@gmail.com</strong>.</li>
+        <li>Take a clear screenshot or photo of the transfer confirmation from your banking app.</li>
+        <li>
+          Send that image to our Instagram with <strong>your full name</strong> and <strong>what item you bought</strong> so we can provide your username and password.
+          Please also include what you’d like your username and password to be.
+          Make sure your payment description matches the copied reference above (especially if unlocking multiple items).
+        </li>
+        <li>We’ll approve access and follow up on Instagram — typically within <strong>24 hours</strong>.</li>
+      </ol>
+      <p class="rh-ig-note">Customer support (Instagram): <span class="rh-ig-handle">@cjay.resells</span></p>
+    </section>
+
+    <section class="rh-placeholders">
+      <h2 class="rh-section-title">Reference visuals</h2>
+      <div class="rh-placeholder-grid">
+        <figure class="rh-placeholder">
+          <div class="rh-placeholder-frame">
+            <span class="rh-placeholder-badge">Example</span>
+            <p class="rh-placeholder-text">How to do the transfer — use your bank’s PayID flow and send to the PayID email shown above.</p>
+          </div>
+          <figcaption class="rh-placeholder-cap">How to do the transfer</figcaption>
+        </figure>
+        <figure class="rh-placeholder">
+          <div class="rh-placeholder-frame rh-placeholder-frame--proof">
+            <span class="rh-placeholder-badge">Example</span>
+            <p class="rh-placeholder-text">What proof should look like — screenshot showing amount, date, recipient details, and confirmation status.</p>
+          </div>
+          <figcaption class="rh-placeholder-cap">Proof of payment screenshot</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <% if (typeof returnDashboard !== 'undefined' && returnDashboard) { %>
+      <a href="/dashboard" class="rh-btn rh-btn-primary rh-btn-block rh-mt">Return to dashboard</a>
+    <% } else { %>
+      <a href="/login" class="rh-btn rh-btn-primary rh-btn-block rh-mt">Return to sign in</a>
+    <% } %>
+  </div>
+</main>
+
+<%- include('partials/foot') %>

@@ -1,0 +1,79 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--subtle" aria-hidden="true"></div>
+
+<header class="rh-dash-header rh-animate-header">
+  <div class="rh-dash-header-inner">
+    <a href="/" class="rh-dash-brand">
+      <span class="rh-logo rh-logo--sm" aria-hidden="true">
+        <span class="rh-logo-bar"></span>
+        <span class="rh-logo-bar rh-logo-bar--mid"></span>
+        <span class="rh-logo-bar rh-logo-bar--short"></span>
+      </span>
+      <span>cj.resells</span>
+    </a>
+    <div class="rh-dash-actions">
+      <a href="<%= backTo || '/' %>" class="rh-link-nav rh-link-nav--header">← Back</a>
+    </div>
+  </div>
+</header>
+
+<main class="rh-admin-main">
+  <% if (!quality || !quality.product) { %>
+    <div class="rh-empty-dash">
+      <p>Quality checks not available.</p>
+      <a href="/" class="rh-btn rh-btn-primary">Back to shop</a>
+    </div>
+  <% } else { %>
+    <section class="rh-admin-section">
+      <h2 class="rh-admin-h2">
+        Quality checks: <%= quality.product.name %>
+      </h2>
+      <p class="rh-admin-hint">See cover photos, reviews, and quality check images uploaded by the admin.</p>
+
+      <div class="rh-quality-cta">
+        <% if (customer && hasAccess) { %>
+          <a class="rh-btn rh-btn-primary rh-btn-block" href="/dashboard">Get from dashboard</a>
+        <% } else if (customer && !hasAccess) { %>
+          <a class="rh-btn rh-btn-unlock-pill rh-btn-block" href="/payment?for=<%= encodeURIComponent(quality.product.id) %>&return=dashboard">Unlock — $<%= quality.product.price %></a>
+        <% } else { %>
+          <a class="rh-btn rh-btn-primary rh-btn-block" href="/login?wanted=<%= encodeURIComponent(quality.product.id) %>">Sign in to request delivery</a>
+        <% } %>
+      </div>
+    </section>
+
+    <% if (quality.bundles && quality.bundles.length) { %>
+      <% quality.bundles.forEach(function (b) { %>
+        <section class="rh-quality-bundle">
+          <div class="rh-quality-bundle-head">
+            <div class="rh-quality-reviewer">
+              <span class="rh-quality-reviewer-label">Reviewer</span>
+              <span class="rh-quality-reviewer-name"><%= b.reviewer || 'cj.resells Team' %></span>
+            </div>
+            <div class="rh-quality-review-date"><%= b.createdAt %></div>
+          </div>
+          <% if (b.reviewText) { %>
+            <p class="rh-quality-review-text"><%= b.reviewText %></p>
+          <% } %>
+
+          <div class="rh-quality-grid">
+            <% b.images.forEach(function (img) { %>
+              <div class="rh-quality-img-wrap">
+                <% if (img.isCover) { %>
+                  <span class="rh-quality-cover-badge">Cover</span>
+                <% } %>
+                <img class="rh-quality-img" src="<%= img.url %>" alt="Quality photo" loading="lazy" />
+              </div>
+            <% }); %>
+          </div>
+        </section>
+      <% }); %>
+    <% } else { %>
+      <section class="rh-admin-section">
+        <p class="rh-muted-inline">No quality photos have been uploaded for this item yet.</p>
+      </section>
+    <% } %>
+  <% } %>
+</main>
+
+<%- include('partials/foot') %>
+

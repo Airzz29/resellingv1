@@ -1,0 +1,160 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--subtle" aria-hidden="true"></div>
+
+<header class="rh-dash-header rh-animate-header">
+  <div class="rh-dash-header-inner">
+    <a href="/" class="rh-dash-brand">
+      <span class="rh-logo rh-logo--sm" aria-hidden="true">
+        <span class="rh-logo-bar"></span>
+        <span class="rh-logo-bar rh-logo-bar--mid"></span>
+        <span class="rh-logo-bar rh-logo-bar--short"></span>
+      </span>
+      <span>cj.resells</span>
+    </a>
+    <div class="rh-dash-actions">
+      <a href="/" class="rh-link-nav rh-link-nav--header">Shop</a>
+      <form method="post" action="/logout" class="rh-logout-form">
+        <button type="submit" class="rh-btn rh-btn-ghost-sm">Log out</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main class="rh-dash-main">
+  <div class="rh-dash-hero rh-animate-hero">
+    <h1 class="rh-dash-title">Supplier storefront</h1>
+    <p class="rh-dash-lead">Your suppliers, vendors, and what you can still unlock — all in one place.</p>
+    <p class="rh-dash-hint"><strong>Your access</strong> — use <strong>Get</strong> to request delivery to your email (one email per item). <strong>Still to buy</strong> — complete payment and we’ll add the line to your account.</p>
+    <p class="rh-dash-user">Signed in as <strong><%= customer %></strong> · Stay signed in for up to 30 days</p>
+  </div>
+
+  <% if (ownedProducts.length) { %>
+    <section class="rh-dash-section rh-dash-section--owned" aria-labelledby="owned-heading">
+      <div class="rh-section-head">
+        <h2 id="owned-heading" class="rh-section-heading">
+          <span class="rh-section-icon" aria-hidden="true"></span>
+          Your suppliers &amp; vendors
+        </h2>
+        <p class="rh-section-sub">Included with your account — request delivery anytime.</p>
+      </div>
+
+      <div class="rh-grid rh-grid-shop">
+        <% ownedProducts.forEach(function (p, i) { %>
+          <article class="rh-card rh-card-shop rh-card-owned rh-animate-card" style="--stagger: <%= i %>">
+            <div class="rh-card-glow" aria-hidden="true"></div>
+            <span class="rh-card-badge rh-card-badge--active">Active</span>
+
+            <div class="rh-card-media">
+              <% if (p.coverUrl) { %>
+                <img class="rh-item-cover" src="<%= p.coverUrl %>" alt="<%= p.name %> cover" loading="lazy" />
+              <% } else { %>
+                <div class="rh-item-cover rh-item-cover--placeholder" aria-hidden="true"></div>
+              <% } %>
+              <span class="rh-card-category"><%= p.category %></span>
+            </div>
+
+            <h2 class="rh-card-title"><%= p.name %></h2>
+            <p class="rh-card-desc"><%= p.desc %></p>
+            <% const sentInfo = sentMap && sentMap[p.id] ? sentMap[p.id] : null; %>
+
+            <div class="rh-card-actions">
+              <% if (sentInfo) { %>
+                <button
+                  type="button"
+                  class="rh-btn rh-btn-get-pill rh-btn-get-owned rh-btn-block js-owned-help"
+                  data-reset-message="Already sent to <%= sentInfo.email %>. To reset and resend, contact us on Instagram @cjay.resells and ask for an email reset for this item."
+                >Already sent</button>
+              <% } else { %>
+                <button
+                  type="button"
+                  class="rh-btn rh-btn-get-pill rh-btn-get-owned rh-btn-block js-open-modal"
+                  data-product-id="<%= p.id %>"
+                  data-product-name="<%= p.name %>"
+                >Get</button>
+              <% } %>
+              <a class="rh-btn rh-btn-ghost-sm rh-btn-shop-quality rh-btn-block" href="/product/<%= p.id %>/quality?back=dashboard">Quality checks</a>
+            </div>
+            <% if (sentInfo) { %>
+              <p class="rh-muted-inline" style="margin-top: 10px;">Already sent to <strong><%= sentInfo.email %></strong></p>
+            <% } %>
+          </article>
+        <% }); %>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (lockedProducts.length) { %>
+    <section class="rh-dash-section rh-dash-section--locked" aria-labelledby="locked-heading">
+      <div class="rh-section-head">
+        <h2 id="locked-heading" class="rh-section-heading rh-section-heading--locked">
+          <span class="rh-section-icon rh-section-icon--lock" aria-hidden="true"></span>
+          Still to unlock
+        </h2>
+        <p class="rh-section-sub">Pay once per line — you’ll go straight to payment (no need to sign in again).</p>
+      </div>
+
+      <div class="rh-grid rh-grid-shop">
+        <% lockedProducts.forEach(function (p, i) { %>
+          <article class="rh-card rh-card-shop rh-card-locked rh-animate-card" style="--stagger: <%= i %>">
+            <div class="rh-card-glow rh-card-glow--muted" aria-hidden="true"></div>
+            <span class="rh-card-badge">Not unlocked</span>
+
+            <div class="rh-card-media">
+              <% if (p.coverUrl) { %>
+                <img class="rh-item-cover" src="<%= p.coverUrl %>" alt="<%= p.name %> cover" loading="lazy" />
+              <% } else { %>
+                <div class="rh-item-cover rh-item-cover--placeholder" aria-hidden="true"></div>
+              <% } %>
+              <span class="rh-card-category"><%= p.category %></span>
+            </div>
+
+            <h2 class="rh-card-title"><%= p.name %></h2>
+            <p class="rh-card-desc"><%= p.desc %></p>
+            <p class="rh-card-price-line">
+              <span class="rh-card-price">$<%= p.price %></span>
+              <span class="rh-card-price-note">one-time unlock</span>
+            </p>
+
+            <div class="rh-card-actions">
+              <a href="/payment?for=<%= encodeURIComponent(p.id) %>&amp;return=dashboard" class="rh-btn rh-btn-unlock-pill rh-btn-block">Unlock — $<%= p.price %></a>
+              <a class="rh-btn rh-btn-ghost-sm rh-btn-shop-quality rh-btn-block" href="/product/<%= p.id %>/quality?back=dashboard">Quality checks</a>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (!ownedProducts.length && !lockedProducts.length) { %>
+    <div class="rh-empty-dash rh-animate-card" style="--stagger: 0">
+      <p>No catalog items available.</p>
+      <a href="/" class="rh-btn rh-btn-ghost-sm rh-mt-sm">Back to shop</a>
+    </div>
+  <% } else if (!ownedProducts.length && lockedProducts.length) { %>
+    <div class="rh-dash-callout rh-animate-card" style="--stagger: 0">
+      <p>You don’t have any active supplier lines yet. Unlock items below — after payment, access is added to this dashboard.</p>
+    </div>
+  <% } %>
+</main>
+
+<div class="rh-modal-overlay" id="product-modal" hidden>
+  <div class="rh-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button type="button" class="rh-modal-close js-close-modal" aria-label="Close">×</button>
+    <h2 id="modal-title" class="rh-modal-title">Delivery email</h2>
+    <p class="rh-modal-sub js-modal-product-label"></p>
+    <form class="rh-form rh-form--compact" id="email-delivery-form">
+      <input type="hidden" name="productId" id="modal-product-id" value="" />
+      <input type="hidden" name="productName" id="modal-product-name" value="" />
+      <label class="rh-label" for="delivery-email">E-mail</label>
+      <input class="rh-input" type="email" id="delivery-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+      <button type="submit" class="rh-btn rh-btn-primary" id="modal-submit">Send to my inbox</button>
+    </form>
+    <div class="rh-modal-feedback" id="modal-feedback" hidden></div>
+    <div class="rh-modal-after-success" id="modal-after-success" hidden>
+      <p class="rh-modal-after-title">Request complete.</p>
+      <button type="button" class="rh-btn rh-btn-primary rh-btn-block js-modal-pick-other">Close and get a different item</button>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

@@ -1,0 +1,108 @@
+<%- include('partials/head') %>
+<div class="rh-page-bg rh-page-bg--subtle" aria-hidden="true"></div>
+
+<header class="rh-dash-header rh-animate-header">
+  <div class="rh-dash-header-inner">
+    <a href="/admin" class="rh-dash-brand">
+      <span class="rh-admin-badge">Admin</span>
+      cj.resells
+    </a>
+    <div class="rh-dash-actions">
+      <form method="post" action="/admin/logout" class="rh-logout-form">
+        <button type="submit" class="rh-btn rh-btn-ghost-sm">Log out</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main class="rh-admin-main">
+  <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Manage quality photos &amp; reviews</h2>
+    <p class="rh-admin-hint">
+      Upload quality check photos for this item. The first photo (if you select “Use as cover”) will be used as the storefront cover.
+    </p>
+
+    <% if (error) { %>
+      <div class="rh-alert rh-alert--error" role="alert"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+      <div class="rh-alert rh-alert--ok" role="status"><%= success %></div>
+    <% } %>
+  </section>
+
+  <% if (product) { %>
+    <section class="rh-admin-section">
+      <h3 class="rh-admin-h2" style="font-size: 1.1rem; margin-bottom: 6px;"><%= product.name %></h3>
+      <p class="rh-admin-hint" style="margin-top: 0;"><%= product.desc %></p>
+
+      <form
+        class="rh-admin-form rh-admin-media-form"
+        method="post"
+        action="/admin/products/<%= productId %>/quality"
+        enctype="multipart/form-data"
+      >
+        <div class="rh-admin-row">
+          <div>
+            <label class="rh-label" for="reviewer">Reviewer name (optional)</label>
+            <input class="rh-input" id="reviewer" name="reviewer" type="text" placeholder="e.g. cj.resells QA" />
+          </div>
+          <div>
+            <label class="rh-label" for="reviewText">Review text (optional)</label>
+            <input class="rh-input" id="reviewText" name="reviewText" type="text" placeholder="Short QA message..." />
+          </div>
+        </div>
+
+        <div class="rh-admin-row" style="grid-template-columns: 1fr;">
+          <div>
+            <label class="rh-label" for="photos">Upload photos (required)</label>
+            <input class="rh-input" id="photos" name="photos" type="file" accept="image/*" multiple required />
+            <label class="rh-check" style="margin-top: 12px;">
+              <input type="checkbox" name="setCover" checked />
+              <span>Use the first uploaded photo as cover</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="rh-btn rh-btn-primary">Upload to gallery</button>
+      </form>
+    </section>
+
+    <section class="rh-admin-section">
+      <h2 class="rh-admin-h2">Existing uploads</h2>
+      <p class="rh-admin-hint">Newest bundles appear first.</p>
+
+      <% if (quality && quality.bundles && quality.bundles.length) { %>
+        <% quality.bundles.forEach(function (b) { %>
+          <div class="rh-user-card" style="margin-bottom: 18px;">
+            <div class="rh-admin-bundle-head">
+              <div>
+                <h3 class="rh-user-name" style="margin-bottom: 6px;"><%= b.reviewer || 'cj.resells Team' %></h3>
+                <% if (b.reviewText) { %>
+                  <p class="rh-muted-inline" style="margin: 0 0 8px;"><%= b.reviewText %></p>
+                <% } %>
+              </div>
+              <div class="rh-muted-inline">
+                <%= b.createdAt %>
+              </div>
+            </div>
+            <div class="rh-admin-gallery">
+              <% b.images.forEach(function (img) { %>
+                <div class="rh-admin-gallery-item">
+                  <% if (img.isCover) { %>
+                    <span class="rh-card-badge rh-card-badge--active" style="position: absolute; top: 10px; left: 10px; right: auto;">Cover</span>
+                  <% } %>
+                  <img class="rh-admin-gallery-img" src="<%= img.url %>" alt="Quality photo" loading="lazy" />
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <p class="rh-muted-inline">No uploads yet.</p>
+      <% } %>
+    </section>
+  <% } %>
+</main>
+
+<%- include('partials/foot') %>
+
