@@ -92,6 +92,14 @@
                     <span class="rh-card-badge rh-card-badge--active" style="position: absolute; top: 10px; left: 10px; right: auto;">Cover</span>
                   <% } %>
                   <img class="rh-admin-gallery-img" src="<%= img.url %>" alt="Quality photo" loading="lazy" />
+                  <form
+                    class="rh-delete-form"
+                    method="post"
+                    action="/admin/products/<%= productId %>/quality/images/<%= img.id %>/delete"
+                    onsubmit="return confirm('Delete this quality photo?');"
+                  >
+                    <button type="submit" class="rh-btn-text-danger rh-admin-delete-photo-btn">Delete</button>
+                  </form>
                 </div>
               <% }); %>
             </div>
