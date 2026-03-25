@@ -39,6 +39,26 @@
   <% } %>
 
   <section class="rh-admin-section">
+    <h2 class="rh-admin-h2">Wallet</h2>
+    <p class="rh-admin-hint">Tracks totals from created accounts (based on selected item prices).</p>
+    <div class="rh-copy-row" style="padding-top: 10px;">
+      <div>
+        <span class="rh-copy-label">Current total</span>
+        <p class="rh-copy-value">$<%= (Number(walletTotalCents || 0) / 100).toFixed(2) %></p>
+        <% if (adminUser) { %>
+          <p class="rh-muted-inline" style="margin: 8px 0 0;">Signed in as admin: <strong><%= adminUser %></strong></p>
+        <% } %>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+        <a class="rh-btn rh-btn-ghost-sm" href="/admin/transactions">View transactions</a>
+        <form method="post" action="/admin/wallet/reset" onsubmit="return confirm('Reset wallet? This will zero the wallet and add a reset entry to the transaction history (does not delete users).');">
+          <button type="submit" class="rh-btn rh-btn-ghost-sm">Reset wallet</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="rh-admin-section">
     <h2 class="rh-admin-h2">Create customer login</h2>
     <p class="rh-admin-hint">Choose a username and password, then tick which storefront items this user can see on their dashboard.</p>
     <form class="rh-admin-form" method="post" action="/admin/users/create">
