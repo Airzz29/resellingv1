@@ -8,7 +8,7 @@ const multer = require('multer');
 const nodemailer = require('nodemailer');
 const { getUploadsDir } = require('./lib/storage');
 const store = require('./lib/store');
-const { initDb } = require('./lib/db');
+const { initDb, getDb } = require('./lib/db');
 const {
   listProducts,
   getProductById,
@@ -624,6 +624,49 @@ app.post(
     return renderAdminProductQuality(res, productId, {
       success: 'Uploaded and saved successfully.',
     });
+  }
+);
+
+app.post(
+  '/admin/products/:productId/quality/images/:imageId/delete',
+  requireAdmin,
+  (req, res) => {
+    const productId = req.params.productId;
+    const imageId = req.params.imageId;
+    if (!productId || !imageId) return res.redirect('/admin');
+
+    try {
+      const database = getDb();
+      const row = database
+        .prepare(
+          `SELECT i.file_path
+           FROM product_quality_images i
+           JOIN product_quality_bundles b ON i.bundle_id = b.id
+           WHERE i.id = ? AND b.product_id = ?`
+        )
+        .get(imageId, productId);
+
+      if (!row) return res.redirect(`/admin/products/${productId}/quality`);
+
+      // Delete DB row first.
+      database
+        .prepare('DELETE FROM product_quality_images WHERE id = ?')
+        .run(imageId);
+
+      // Delete file from persistent uploads.
+      const filePath = row.file_path || '';
+      const rel = filePath.startsWith('/uploads/')
+        ? filePath.replace('/uploads/', '')
+        : '';
+      if (rel) {
+        const absPath = path.join(UPLOADS_DIR, rel);
+        if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+      }
+    } catch (err) {
+      console.error('Delete quality image error:', err && err.message ? err.message : err);
+    }
+
+    return res.redirect(`/admin/products/${productId}/quality`);
   }
 );
 
